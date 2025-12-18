@@ -1,9 +1,9 @@
 const puppeteer = require('puppeteer');
-const connectDB = require('./config/db');
+// const connectDB = require('./config/db');
 const Product = require('./models/Product');
 
 // Step 1: Database se connection jodo (Munshi ji ko bulao)
-connectDB();
+// connectDB();
 
 async function scrapeProduct(url) {
     console.log("🕵️‍♂️ Jasoosi shuru... (Scraping Start)");
@@ -62,7 +62,7 @@ async function scrapeProduct(url) {
             } else {
                 // CASE B: Product naya hai -> Naya banao
                 console.log("🆕 Naya product mila. Database mein entry kar raha hu...");
-                await Product.create({
+                product = await Product.create({
                     name: productData.title,
                     url: url,
                     currentPrice: productData.price,
@@ -70,13 +70,16 @@ async function scrapeProduct(url) {
                 });
                 console.log("✅ New Product Saved to MongoDB!");
             }
+            return product;
         } else {
             console.log("❌ Price fetch nahi ho paaya (Shayad Amazon ne rok diya).");
+            return null; 
         }
 
     } catch (error) {
         // Agar kuch phata toh yahan error dikhega
         console.error("❌ Error aaya:", error);
+        return null;
     } finally {
         // Step 8: Sab kaam hone ke baad browser band karo
         await browser.close();
@@ -84,8 +87,10 @@ async function scrapeProduct(url) {
     }
 }
 
-// Jis product ko track karna hai uska link yahan daalo
-const productUrl="https://www.amazon.in/OnePlus-Forest-Green-Storage-SuperVOOC/dp/B09WRMNJ9G?th=1"; 
+// // Jis product ko track karna hai uska link yahan daalo
+// const productUrl="https://www.amazon.in/OnePlus-Forest-Green-Storage-SuperVOOC/dp/B09WRMNJ9G?th=1"; 
 
-// Function ko call karo
-scrapeProduct(productUrl);
+// // Function ko call karo
+// scrapeProduct(productUrl);
+
+module.exports=scrapeProduct
