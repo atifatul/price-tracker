@@ -1,6 +1,7 @@
 // server.js - Yeh humara Head Office hai
 
 // 1. Zaroori tools (Libraries) manga rahe hain
+const sendEmail = require("./utils/sendEmail");
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db"); // Munshi ji (Database connection)
@@ -81,14 +82,35 @@ cron.schedule("*/30 * * * *", async () => {
     }
 
     // 2. Ek-ek karke sabko re-check karo
+    // Step A: Purani price yaad rakho
     for (const product of products) {
+      const oldPrice = product.currentPrice;
+
+      // Jasoos ko kaam pe lagao (Scraper call karo)
       console.log(`🕵️‍♂️ Checking: ${product.name}`);
 
-      // Wahi purana scraper function use karo update karne ke liye
-      await scrapeProduct(product.url);
-    }
+      // Step B: Naya price scrape karo
+      // Hum scraper function ko call kar rahe hain jo DB bhi update kar dega
+      const updatedProduct = await scrapeProduct(product.url);
 
-    console.log("✅ All products checked!");
+      if (!updatedProduct) continue; // Agar error aaya to skip karo
+
+      const newPrice = updatedProduct.currentPrice;
+      console.log(`📊 Old: ₹${oldPrice} | New: ₹${newPrice}`);
+
+      // Step C: COMPARE KARO (Kya price kam hui?)
+      if (newPrice < oldPrice) {
+        console.log("📉 PRICE DROP! Email bhej raha hu...");
+
+        // Email Function Call
+        await sendEmail(updatedProduct.name, newPrice, updatedProduct.url);
+
+        console.log("✅ Email Alert Sent!");
+      } else {
+        console.log("😐 Price same hai (ya badh gayi). No Email.");
+      }
+    }
+    console.log("✅ All checked!");
   } catch (error) {
     console.error("❌ Cron Job Error:", error);
   }
